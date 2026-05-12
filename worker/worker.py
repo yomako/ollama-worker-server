@@ -14,7 +14,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL")
 print("🔥 WORKER STARTED")
 
 while True:
-    _, job_raw = r.brpop("ollama:queue")
+    _, job_raw = r.brpop("ollama:queue", timeout=5)
     job = json.loads(job_raw)
 
     job_id = job["id"]

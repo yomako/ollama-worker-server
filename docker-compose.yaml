@@ -29,6 +29,7 @@ services:
 
   worker:
     build: ./worker
+    command: python -u worker.py
     container_name: ollama-worker
     environment:
       REDIS_HOST: redis
