@@ -11,6 +11,7 @@ r = redis.Redis(
 )
 
 OLLAMA_URL = os.getenv("OLLAMA_URL")
+print("🔥 WORKER STARTED")
 
 while True:
     _, job_raw = r.brpop("ollama:queue")
