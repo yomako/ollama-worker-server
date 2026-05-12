@@ -7,6 +7,7 @@ r = redis.Redis(
 )
 
 OLLAMA_URL = os.getenv("OLLAMA_URL")
+KEY_TTL = 604800  # 7 days
 
 while True:
     result = r.brpop("ollama:queue", timeout=5)
@@ -38,11 +39,11 @@ while True:
 
         duration = time.time() - start
 
-        r.set(f"ollama:result:{job_id}", output)
-        r.set(f"ollama:status:{job_id}", "done")
+        r.set(f"ollama:result:{job_id}", output, ex=KEY_TTL)
+        r.set(f"ollama:status:{job_id}", "done", ex=KEY_TTL)
 
         r.lpush("ollama:metrics:durations", duration)
         r.ltrim("ollama:metrics:durations", 0, 50)
 
     except Exception as e:
-        r.set(f"ollama:status:{job_id}", "error")
+        r.set(f"ollama:status:{job_id}", "error", ex=KEY_TTL)

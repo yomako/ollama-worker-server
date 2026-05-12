@@ -10,6 +10,9 @@ const redis = new Redis({
   port: process.env.REDIS_PORT,
 });
 
+const KEY_TTL = 604800; // 7 days
+const DEFAULT_JOB_DURATION = 30; // seconds, fallback when no history
+
 // helper
 function loadPrompt(name, input) {
   const template = fs.readFileSync(`../shared/prompts/${name}.txt`, "utf-8");
@@ -29,8 +32,8 @@ app.post("/jobs", async (req, reply) => {
     created_at: Date.now(),
   };
 
-  await redis.set(`ollama:job:${id}`, JSON.stringify(job));
-  await redis.set(`ollama:status:${id}`, "queued");
+  await redis.set(`ollama:job:${id}`, JSON.stringify(job), "EX", KEY_TTL);
+  await redis.set(`ollama:status:${id}`, "queued", "EX", KEY_TTL);
   await redis.lpush("ollama:queue", JSON.stringify(job));
 
   const eta = await estimateETA();
@@ -52,8 +55,8 @@ app.post("/jobs/summary", async (req, reply) => {
     created_at: Date.now(),
   };
 
-  await redis.set(`ollama:job:${id}`, JSON.stringify(job));
-  await redis.set(`ollama:status:${id}`, "queued");
+  await redis.set(`ollama:job:${id}`, JSON.stringify(job), "EX", KEY_TTL);
+  await redis.set(`ollama:status:${id}`, "queued", "EX", KEY_TTL);
   await redis.lpush("ollama:queue", JSON.stringify(job));
 
   const eta = await estimateETA();
@@ -84,10 +87,9 @@ async function estimateETA() {
   const len = await redis.llen("ollama:queue");
   const durations = await redis.lrange("ollama:metrics:durations", 0, 20);
 
-  if (!durations.length) return null;
-
-  const avg =
-    durations.reduce((a, b) => a + parseFloat(b), 0) / durations.length;
+  const avg = durations.length
+    ? durations.reduce((a, b) => a + parseFloat(b), 0) / durations.length
+    : DEFAULT_JOB_DURATION;
 
   return Math.round(len * avg);
 }
