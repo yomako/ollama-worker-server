@@ -13,7 +13,7 @@ r = redis.Redis(
 OLLAMA_URL = os.getenv("OLLAMA_URL")
 
 while True:
-    _, job_raw = r.brpop("queue:ollama")
+    _, job_raw = r.brpop("ollama:queue")
     job = json.loads(job_raw)
 
     job_id = job["id"]
