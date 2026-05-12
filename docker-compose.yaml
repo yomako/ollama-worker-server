@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: ollama-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --save "" --appendonly no
+    networks:
+      - llm-net
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    container_name: ollama-api
+    ports:
+      - "8080:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+    networks:
+      - llm-net
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    container_name: ollama-worker
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OLLAMA_URL: http://ollama:11434
+    depends_on:
+      - redis
+    networks:
+      - llm-net
+    restart: unless-stopped
+
+networks:
+  llm-net:
+    external: true

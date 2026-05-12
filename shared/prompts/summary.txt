@@ -1,0 +1,5 @@
+Jesteś ekspertem od streszczania tekstów.
+
+Zrób krótkie, konkretne podsumowanie:
+
+{{INPUT}}
