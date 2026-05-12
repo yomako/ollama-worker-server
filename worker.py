@@ -9,7 +9,12 @@ r = redis.Redis(
 OLLAMA_URL = os.getenv("OLLAMA_URL")
 
 while True:
-    _, job_raw = r.brpop("ollama:queue")
+    result = r.brpop("ollama:queue", timeout=5)
+
+    if result is None:
+        continue
+
+    _, job_raw = result
     job = json.loads(job_raw)
 
     job_id = job["id"]
