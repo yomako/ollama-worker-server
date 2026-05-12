@@ -1,8 +1,4 @@
-import redis
-import requests
-import json
-import time
-import os
+import redis, requests, json, time, os
 
 r = redis.Redis(
     host=os.getenv("REDIS_HOST"),
@@ -11,15 +7,19 @@ r = redis.Redis(
 )
 
 OLLAMA_URL = os.getenv("OLLAMA_URL")
-print("🔥 WORKER STARTED")
 
 while True:
-    _, job_raw = r.brpop("ollama:queue", timeout=5)
+    result = r.brpop("ollama:queue", timeout=5)
+
+    if result is None:
+        continue
+
+    _, job_raw = result
     job = json.loads(job_raw)
 
     job_id = job["id"]
 
-    r.set(f"status:{job_id}", "processing")
+    r.set(f"ollama:status:{job_id}", "processing")
 
     start = time.time()
 
@@ -28,23 +28,21 @@ while True:
             f"{OLLAMA_URL}/api/chat",
             json={
                 "model": "llama3.1:8b-instruct-q4_K_M",
-                "messages": [
-                    {"role": "user", "content": job["prompt"]}
-                ],
+                "messages": [{"role": "user", "content": job["prompt"]}],
                 "stream": False
             },
             timeout=120
         )
 
         output = res.json()["message"]["content"]
+
         duration = time.time() - start
 
-        r.set(f"result:{job_id}", output)
-        r.set(f"status:{job_id}", "done")
+        r.set(f"ollama:result:{job_id}", output)
+        r.set(f"ollama:status:{job_id}", "done")
 
-        r.lpush("metrics:durations", duration)
-        r.ltrim("metrics:durations", 0, 50)
+        r.lpush("ollama:metrics:durations", duration)
+        r.ltrim("ollama:metrics:durations", 0, 50)
 
     except Exception as e:
-        r.set(f"status:{job_id}", "error")
-        r.set(f"result:{job_id}", str(e))
+        r.set(f"ollama:status:{job_id}", "error")
