@@ -6,6 +6,6 @@ COPY api/package*.json ./
 RUN npm install
 
 COPY api/src ./src
-COPY api/shared ./shared
+COPY shared ./shared
 
 CMD ["node", "src/server.js"]
