@@ -12,7 +12,9 @@ services:
     restart: unless-stopped
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
     container_name: ollama-api
     ports:
       - "8080:3000"
