@@ -24,6 +24,7 @@ Zwróć szczególną uwagę na wymagania:
 - hiperlinki muszą być zamknięte w tag <a> z target="_blank"
 - tagi <b> i <i> przepisuj odpowiednio na <strong> i <em>, jeżeli widzisz <strong> lub <em> w oryginale - przenoś bez zmian
 - nie zapisuj żadnych znaków \n i \r
+- docelowa struktura to słownik z kluczami "title", "alias", "introtext", "fulltext", wszystkie wartości to stringi, bez żadnych zagnieżdżonych JSONów
 
 Mając na uwadze powyższy przykład i wymagania, przekształć poniższy tekst (UWAGA: napisz sam JSON bez żadnych dodatkowych komentarzy - odpowiedź zostanie natychmiast poddana dekodowaniu, jeżeli nie zwrócisz czystego JSONa aplikacja rzuci błędem):
 {{INPUT}}

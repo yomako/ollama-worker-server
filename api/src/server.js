@@ -92,11 +92,27 @@ async function estimateETA() {
   const len = await redis.llen("ollama:queue");
   const durations = await redis.lrange("ollama:metrics:durations", 0, 20);
 
-  const avg = durations.length
-    ? durations.reduce((a, b) => a + parseFloat(b), 0) / durations.length
+  const nums = durations.map(Number).filter((n) => !isNaN(n));
+
+  const avg = nums.length
+    ? nums.reduce((a, b) => a + b, 0) / nums.length
     : DEFAULT_JOB_DURATION;
 
-  return Math.round(len * avg);
+  // 🔥 aktualny job
+  const currentJob = await redis.get("ollama:current_job");
+
+  let currentRemaining = 0;
+
+  if (currentJob) {
+    const start = await redis.get(`ollama:start:${currentJob}`);
+
+    if (start) {
+      const elapsed = Date.now() / 1000 - Number(start);
+      currentRemaining = Math.max(avg - elapsed, 0);
+    }
+  }
+
+  return Math.round(currentRemaining + len * avg);
 }
 
 app.listen({ port: 3000, host: "0.0.0.0" });
