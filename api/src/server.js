@@ -43,15 +43,15 @@ app.post("/jobs", async (req, reply) => {
 
 // POST summary
 app.post("/jobs/summary", async (req, reply) => {
-  const { text } = req.body;
+  const { prompt } = req.body;
 
-  const prompt = loadPrompt("summary", text);
+  const promptReplaced = loadPrompt("summary", prompt);
   const id = uuidv4();
 
   const job = {
     id,
     type: "summary",
-    prompt,
+    prompt: promptReplaced,
     created_at: Date.now(),
   };
 
@@ -61,7 +61,7 @@ app.post("/jobs/summary", async (req, reply) => {
 
   const eta = await estimateETA();
 
-  return { job_id: id, status: "queued", eta_seconds: eta, prompt: prompt };
+  return { job_id: id, status: "queued", eta_seconds: eta };
 });
 
 // GET status
