@@ -77,6 +77,11 @@ app.get("/jobs/:id", async (req, reply) => {
     return { status, result };
   }
 
+  if (status === "error") {
+    const error = await redis.get(`ollama:error:${id}`);
+    return { status, error };
+  }
+
   const eta = await estimateETA();
 
   return { status, eta_seconds: eta };

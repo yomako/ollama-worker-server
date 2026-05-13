@@ -1,4 +1,4 @@
-import redis, requests, json, time, os
+import redis, requests, json, time, os, traceback
 
 r = redis.Redis(
     host=os.getenv("REDIS_HOST"),
@@ -46,4 +46,6 @@ while True:
         r.ltrim("ollama:metrics:durations", 0, 50)
 
     except Exception as e:
+        err = traceback.format_exc()
         r.set(f"ollama:status:{job_id}", "error", ex=KEY_TTL)
+        r.set(f"ollama:error:{job_id}", err)
