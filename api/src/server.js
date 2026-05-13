@@ -15,7 +15,7 @@ const DEFAULT_JOB_DURATION = 30; // seconds, fallback when no history
 
 // helper
 function loadPrompt(name, input) {
-  const template = fs.readFileSync(`../shared/prompts/${name}.txt`, "utf-8");
+  const template = fs.readFileSync(`shared/prompts/${name}.txt`, "utf-8");
   return template.replace("{{INPUT}}", input);
 }
 
