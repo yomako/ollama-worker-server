@@ -20,32 +20,56 @@ while True:
 
     job_id = job["id"]
 
-    r.set(f"ollama:status:{job_id}", "processing")
+    r.set(f"ollama:status:{job_id}", "processing", ex=KEY_TTL)
 
     start = time.time()
 
     try:
-        res = requests.post(
+        with requests.post(
             f"{OLLAMA_URL}/api/chat",
             json={
                 "model": "llama3.1:8b-instruct-q4_K_M",
                 "messages": [{"role": "user", "content": job["prompt"]}],
-                "stream": False
+                "stream": True
             },
-            timeout=120
-        )
+            stream=True,
+            timeout=300  # tylko na połączenie / brak danych
+        ) as res:
 
-        output = res.json()["message"]["content"]
+            full = ""
+
+            for line in res.iter_lines():
+                if not line:
+                    continue
+
+                chunk = json.loads(line)
+
+                # Ollama chat API:
+                # chunk["message"]["content"]
+                token = chunk.get("message", {}).get("content", "")
+
+                if token:
+                    full += token
+
+                    # 🔥 zapis progresu
+                    r.set(f"ollama:partial:{job_id}", full, ex=KEY_TTL)
+
+                # zakończenie streama
+                if chunk.get("done"):
+                    break
 
         duration = time.time() - start
 
-        r.set(f"ollama:result:{job_id}", output, ex=KEY_TTL)
+        r.set(f"ollama:result:{job_id}", full, ex=KEY_TTL)
         r.set(f"ollama:status:{job_id}", "done", ex=KEY_TTL)
+
+        r.delete(f"ollama:partial:{job_id}")  # opcjonalnie cleanup
 
         r.lpush("ollama:metrics:durations", duration)
         r.ltrim("ollama:metrics:durations", 0, 50)
 
-    except Exception as e:
+    except Exception:
         err = traceback.format_exc()
+
         r.set(f"ollama:status:{job_id}", "error", ex=KEY_TTL)
-        r.set(f"ollama:error:{job_id}", err)
+        r.set(f"ollama:error:{job_id}", err, ex=KEY_TTL)
