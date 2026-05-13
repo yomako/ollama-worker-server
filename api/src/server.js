@@ -61,7 +61,7 @@ app.post("/jobs/summary", async (req, reply) => {
 
   const eta = await estimateETA();
 
-  return { job_id: id, status: "queued", eta_seconds: eta };
+  return { job_id: id, status: "queued", eta_seconds: eta, prompt: prompt };
 });
 
 // GET status
