@@ -23,6 +23,8 @@ while True:
     r.set(f"ollama:status:{job_id}", "processing", ex=KEY_TTL)
 
     start = time.time()
+    r.set("ollama:current_job", job_id, ex=300)
+    r.set(f"ollama:start:{job_id}", start, ex=300)
 
     try:
         with requests.post(
@@ -63,7 +65,9 @@ while True:
         r.set(f"ollama:result:{job_id}", full, ex=KEY_TTL)
         r.set(f"ollama:status:{job_id}", "done", ex=KEY_TTL)
 
-        r.delete(f"ollama:partial:{job_id}")  # opcjonalnie cleanup
+        r.delete(f"ollama:partial:{job_id}")
+        r.delete("ollama:current_job")
+        r.delete(f"ollama:start:{job_id}")
 
         r.lpush("ollama:metrics:durations", duration)
         r.ltrim("ollama:metrics:durations", 0, 50)
@@ -73,3 +77,5 @@ while True:
 
         r.set(f"ollama:status:{job_id}", "error", ex=KEY_TTL)
         r.set(f"ollama:error:{job_id}", err, ex=KEY_TTL)
+        r.delete("ollama:current_job")
+        r.delete(f"ollama:start:{job_id}")
